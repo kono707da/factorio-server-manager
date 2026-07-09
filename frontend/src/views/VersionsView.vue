@@ -35,6 +35,7 @@ const latest = ref<LatestInfo>({ stable: '', experimental: '' })
 const installStatus = ref<InstallStatus>({ downloading: false, progress: 0, version: '', error: '' })
 const checking = ref(false)
 const installing = ref(false)
+const userTriggered = ref(false)
 let pollTimer: ReturnType<typeof setInterval> | null = null
 
 async function fetchCurrent() {
@@ -59,20 +60,15 @@ async function checkLatest() {
 async function installVersion(version: string, channel: string) {
   if (!confirm(`确定要安装 Factorio ${version} (${channel}) 吗？\n\n安装过程中服务器将停止运行，请确保已保存游戏进度。`)) return
   installing.value = true
+  userTriggered.value = true
   installStatus.value = { downloading: true, progress: 0, version, error: '' }
+  startPolling()
   try {
-    const { data } = await api.post('/versions/install', { version, channel })
-    if (data.success) {
-      alert(`Factorio ${version} 安装成功！`)
-      await fetchCurrent()
-    } else {
-      alert(data.error || '安装失败')
-    }
+    await api.post('/versions/install', { version, channel })
   } catch (e: any) {
-    alert(e.message || '安装失败')
-  } finally {
-    installing.value = false
     installStatus.value.downloading = false
+    installing.value = false
+    alert(e.message || '启动下载失败')
   }
 }
 
@@ -84,6 +80,16 @@ function pollInstallStatus() {
         clearInterval(pollTimer)
         pollTimer = null
       }
+      installing.value = false
+      if (userTriggered.value) {
+        userTriggered.value = false
+        if (data.error) {
+          alert(`安装失败: ${data.error}`)
+        } else if (data.progress >= 100) {
+          alert(`Factorio ${data.version} 安装成功！`)
+          fetchCurrent()
+        }
+      }
     }
   }).catch(() => {})
 }
@@ -93,11 +99,14 @@ function startPolling() {
   pollTimer = setInterval(pollInstallStatus, 2000)
 }
 
-onMounted(() => {
+onMounted(async () => {
   fetchCurrent()
   checkLatest()
-  pollInstallStatus()
-  if (installStatus.value.downloading) startPolling()
+  await pollInstallStatus()
+  if (installStatus.value.downloading) {
+    installing.value = true
+    startPolling()
+  }
 })
 </script>
 
