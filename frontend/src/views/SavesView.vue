@@ -10,6 +10,7 @@ import {
   RefreshCw,
   Save,
   Star,
+  Disc,
 } from 'lucide-vue-next'
 
 interface SaveInfo {
@@ -23,6 +24,8 @@ const saves = ref<SaveInfo[]>([])
 const uploading = ref(false)
 const uploadProgress = ref(0)
 const switchLoading = ref('')
+const serverRunning = ref(false)
+const savingCurrent = ref(false)
 
 function formatSize(bytes: number) {
   if (bytes >= 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`
@@ -44,6 +47,38 @@ async function fetchSaves() {
     const { data } = await api.get('/saves')
     saves.value = data.saves || []
   } catch { /* ignore */ }
+}
+
+async function fetchStatus() {
+  try {
+    const { data } = await api.get('/server/status')
+    serverRunning.value = data.running
+  } catch { /* ignore */ }
+}
+
+async function saveCurrentGame() {
+  if (!serverRunning.value) {
+    alert('服务器未运行，无法保存当前游戏')
+    return
+  }
+  if (!confirm('保存当前服务器游戏状态到存档？这将通过 Factorio /server-save 命令触发保存。')) return
+  savingCurrent.value = true
+  try {
+    const { data } = await api.post('/server/save')
+    if (!data.success) {
+      alert(data.error || '保存指令发送失败')
+      return
+    }
+    // /server-save 是异步命令，等待几秒让 Factorio 完成写入
+    alert('保存指令已发送，等待服务器写入存档文件...')
+    await new Promise(resolve => setTimeout(resolve, 3000))
+    await fetchSaves()
+    alert('存档保存完成，已刷新列表')
+  } catch (e: any) {
+    alert(e.message || '保存当前游戏失败')
+  } finally {
+    savingCurrent.value = false
+  }
 }
 
 async function uploadSave(event: Event) {
@@ -136,7 +171,10 @@ function handleDragOver(event: DragEvent) {
   event.preventDefault()
 }
 
-onMounted(fetchSaves)
+onMounted(() => {
+  fetchSaves()
+  fetchStatus()
+})
 </script>
 
 <template>
@@ -170,7 +208,7 @@ onMounted(fetchSaves)
     </div>
 
     <!-- Actions -->
-    <div class="flex gap-3">
+    <div class="flex gap-3 flex-wrap">
       <button @click="fetchSaves" class="btn-ghost">
         <RefreshCw class="w-4 h-4" />
         刷新
@@ -179,6 +217,20 @@ onMounted(fetchSaves)
         <Plus class="w-4 h-4" />
         新建存档
       </button>
+      <button
+        @click="saveCurrentGame"
+        :disabled="savingCurrent || !serverRunning"
+        :class="[
+          serverRunning ? 'btn-success' : 'btn-ghost opacity-60 cursor-not-allowed'
+        ]"
+        :title="serverRunning ? '将当前服务器游戏状态保存为存档文件' : '服务器未运行时无法保存当前游戏'"
+      >
+        <Disc class="w-4 h-4" />
+        {{ savingCurrent ? '保存中...' : '保存当前游戏' }}
+      </button>
+      <span v-if="!serverRunning" class="text-xs text-factorio-text-muted self-center">
+        （服务器未运行，按钮不可用）
+      </span>
     </div>
 
     <!-- Saves Table -->
