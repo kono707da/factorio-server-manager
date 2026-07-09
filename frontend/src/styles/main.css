@@ -1,0 +1,88 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-factorio-bg text-factorio-text font-body antialiased;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-factorio-bg;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-factorio-border rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-factorio-text-muted;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 text-sm;
+  }
+
+  .btn-primary {
+    @apply btn bg-factorio-accent hover:bg-factorio-accent-light text-white shadow-lg shadow-factorio-accent/20;
+  }
+
+  .btn-success {
+    @apply btn bg-factorio-success hover:brightness-110 text-white shadow-lg shadow-factorio-success/20;
+  }
+
+  .btn-danger {
+    @apply btn bg-factorio-danger hover:brightness-110 text-white shadow-lg shadow-factorio-danger/20;
+  }
+
+  .btn-info {
+    @apply btn bg-factorio-info hover:brightness-110 text-white shadow-lg shadow-factorio-info/20;
+  }
+
+  .btn-ghost {
+    @apply btn bg-transparent hover:bg-factorio-card text-factorio-text-muted hover:text-factorio-text border border-factorio-border;
+  }
+
+  .card {
+    @apply bg-factorio-card border border-factorio-border rounded-xl p-5;
+  }
+
+  .input {
+    @apply bg-factorio-bg border border-factorio-border rounded-lg px-3 py-2 text-sm text-factorio-text placeholder-factorio-text-muted focus:outline-none focus:border-factorio-accent focus:ring-1 focus:ring-factorio-accent/30 transition-all;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-success {
+    @apply badge bg-factorio-success/20 text-factorio-success;
+  }
+
+  .badge-danger {
+    @apply badge bg-factorio-danger/20 text-factorio-danger;
+  }
+
+  .badge-info {
+    @apply badge bg-factorio-info/20 text-factorio-info;
+  }
+
+  .glow-accent {
+    box-shadow: 0 0 20px rgba(226, 112, 58, 0.15);
+  }
+
+  .glow-success {
+    box-shadow: 0 0 20px rgba(0, 184, 148, 0.15);
+  }
+
+  .glow-danger {
+    box-shadow: 0 0 20px rgba(231, 76, 60, 0.15);
+  }
+}

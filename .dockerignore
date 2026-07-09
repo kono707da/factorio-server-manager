@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+*.db
+*.db-shm
+*.db-wal
+node_modules/
+frontend/dist/
+.git/
+.gitignore
+*.md
+.trae/
+start.bat
+kill_stale_port.ps1
