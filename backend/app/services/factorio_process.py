@@ -1,4 +1,5 @@
 import asyncio
+import json
 import logging
 import os
 import shutil
@@ -78,6 +79,51 @@ class FactorioProcess:
                 return path
         return None
 
+    def _generate_server_settings(self, path: str, paths: dict):
+        default_settings = {
+            "name": "Factorio Server",
+            "description": "Factorio server managed by Factorio Server Manager",
+            "tags": ["game", "server"],
+            "max_players": paths.get("max_players", 10),
+            "visibility": {"public": True, "lan": True},
+            "username": "",
+            "password": "",
+            "token": "",
+            "game_password": paths.get("game_password", ""),
+            "require_user_verification": paths.get("require_user_verification", True),
+            "max_upload_in_kilobytes_per_second": 0,
+            "max_upload_slots": 5,
+            "minimum_latency_in_ticks": 0,
+            "ignore_player_limit_for_returning_players": False,
+            "allow_commands": "admins-only",
+            "autosave_interval": paths.get("autosave_interval", 5),
+            "autosave_slots": paths.get("autosave_slots", 5),
+            "afk_autokick_interval": 0,
+            "auto_pause": True,
+            "only_admins_can_pause_the_game": True,
+            "autosave_only_on_server": True,
+            "non_blocking_saving": True,
+            "max_heartbeats_per_second": 60,
+        }
+        try:
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump(default_settings, f, indent=2, ensure_ascii=False)
+            logger.info("已生成默认 server-settings.json: %s", path)
+        except Exception as e:
+            logger.error("生成 server-settings.json 失败: %s", e, exc_info=True)
+
+    def _generate_server_id(self, path: str):
+        import uuid
+        server_id = {"token": str(uuid.uuid4())}
+        try:
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump(server_id, f, indent=2)
+            logger.info("已生成默认 server-id.json: %s", path)
+        except Exception as e:
+            logger.error("生成 server-id.json 失败: %s", e, exc_info=True)
+
     async def start(self, save_filename: str | None = None) -> dict:
         if self.process and self.process.returncode is None:
             return {"success": False, "error": "服务器已在运行中"}
@@ -95,6 +141,14 @@ class FactorioProcess:
 
         saves_dir = paths["saves_dir"]
         os.makedirs(saves_dir, exist_ok=True)
+
+        server_settings_path = os.path.join(factorio_dir, "server-settings.json")
+        if not os.path.isfile(server_settings_path):
+            self._generate_server_settings(server_settings_path, paths)
+
+        server_id_path = os.path.join(factorio_dir, "server-id.json")
+        if not os.path.isfile(server_id_path):
+            self._generate_server_id(server_id_path)
 
         cmd = [
             binary,
