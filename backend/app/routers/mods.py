@@ -50,7 +50,7 @@ async def delete_mod(filename: str):
 @router.post("/toggle")
 async def toggle_mod(req: ModToggleRequest):
     svc = ModService.get_instance()
-    result = await svc.toggle_mod(req.filename, req.enabled)
+    result = await svc.toggle_mod(req.name, req.enabled)
     if not result.get("success"):
         raise HTTPException(status_code=500, detail=result.get("error", "操作失败"))
     return result

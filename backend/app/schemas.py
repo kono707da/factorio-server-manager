@@ -98,5 +98,5 @@ class LatestVersionInfo(BaseModel):
 
 
 class ModToggleRequest(BaseModel):
-    filename: str
+    name: str
     enabled: bool

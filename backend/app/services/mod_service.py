@@ -19,15 +19,17 @@ class ModService:
             cls._instance = cls()
         return cls._instance
 
-    async def _get_mods_dir(self) -> str:
+    async def _get_factorio_dir(self) -> str:
         db = await get_db()
         cursor = await db.execute("SELECT factorio_dir FROM settings WHERE id = 1")
         row = await cursor.fetchone()
         factorio_dir = dict(row)["factorio_dir"] if row else DEFAULT_FACTORIO_DIR
         if not factorio_dir:
             factorio_dir = DEFAULT_FACTORIO_DIR
-        mods_dir = os.path.join(factorio_dir, "mods")
-        return mods_dir
+        return factorio_dir
+
+    async def _get_mods_dir(self) -> str:
+        return os.path.join(await self._get_factorio_dir(), "mods")
 
     def _get_mod_list_path(self, mods_dir: str) -> str:
         return os.path.join(mods_dir, "mod-list.json")
@@ -69,37 +71,111 @@ class ModService:
             logger.error("解析 mod zip 失败: %s - %s", filepath, e)
             return None
 
+    def _parse_builtin_mod(self, mod_dir: str) -> dict | None:
+        info_path = os.path.join(mod_dir, "info.json")
+        if not os.path.isfile(info_path):
+            return None
+        try:
+            with open(info_path, "r", encoding="utf-8") as f:
+                info = json.load(f)
+                return {
+                    "name": info.get("name", os.path.basename(mod_dir)),
+                    "version": info.get("version", ""),
+                    "title": info.get("title", info.get("name", "")),
+                    "author": info.get("author", "Factorio Team"),
+                    "description": info.get("description", ""),
+                    "factorio_version": info.get("factorio_version", ""),
+                }
+        except Exception as e:
+            logger.error("解析内置 mod info.json 失败: %s - %s", mod_dir, e)
+            return None
+
     async def list_mods(self) -> list[dict]:
-        mods_dir = await self._get_mods_dir()
-        if not os.path.isdir(mods_dir):
-            return []
+        factorio_dir = await self._get_factorio_dir()
+        mods_dir = os.path.join(factorio_dir, "mods")
+        data_dir = os.path.join(factorio_dir, "data")
 
         mod_list_data = self._read_mod_list(mods_dir)
         mod_list = {m["name"]: m for m in mod_list_data.get("mods", [])}
 
         mods = []
-        for f in os.listdir(mods_dir):
-            if not f.endswith(".zip"):
+        seen_names = set()
+
+        # 1. 扫描 mods/ 目录下的 .zip 文件
+        if os.path.isdir(mods_dir):
+            for f in os.listdir(mods_dir):
+                if not f.endswith(".zip"):
+                    continue
+                filepath = os.path.join(mods_dir, f)
+                stat = os.stat(filepath)
+                info = self._parse_mod_zip(filepath) or {}
+                name = info.get("name", f.replace(".zip", ""))
+
+                list_entry = mod_list.get(name, {})
+                enabled = list_entry.get("enabled", True)
+
+                mods.append({
+                    "filename": f,
+                    "name": name,
+                    "version": info.get("version", ""),
+                    "title": info.get("title", name),
+                    "author": info.get("author", ""),
+                    "description": info.get("description", ""),
+                    "factorio_version": info.get("factorio_version", ""),
+                    "enabled": enabled,
+                    "is_builtin": False,
+                    "size": stat.st_size,
+                    "modified": datetime.fromtimestamp(stat.st_mtime).isoformat(),
+                })
+                seen_names.add(name)
+
+        # 2. 扫描 data/ 目录下的内置 mod（base, elevated-rails, quality, space-age 等）
+        if os.path.isdir(data_dir):
+            for d in os.listdir(data_dir):
+                mod_dir = os.path.join(data_dir, d)
+                if not os.path.isdir(mod_dir):
+                    continue
+                info = self._parse_builtin_mod(mod_dir)
+                if not info:
+                    continue
+                name = info["name"]
+                if name in seen_names:
+                    continue
+
+                list_entry = mod_list.get(name, {})
+                enabled = list_entry.get("enabled", True)
+
+                mods.append({
+                    "filename": "",
+                    "name": name,
+                    "version": info.get("version", ""),
+                    "title": info.get("title", name),
+                    "author": info.get("author", "Factorio Team"),
+                    "description": info.get("description", ""),
+                    "factorio_version": info.get("factorio_version", ""),
+                    "enabled": enabled,
+                    "is_builtin": True,
+                    "size": 0,
+                    "modified": "",
+                })
+                seen_names.add(name)
+
+        # 3. 补充 mod-list.json 中存在但没有对应文件的 mod（如 base）
+        for name, entry in mod_list.items():
+            if name in seen_names:
                 continue
-            filepath = os.path.join(mods_dir, f)
-            stat = os.stat(filepath)
-            info = self._parse_mod_zip(filepath) or {}
-            name = info.get("name", f.replace(".zip", ""))
-
-            list_entry = mod_list.get(name, {})
-            enabled = list_entry.get("enabled", True)
-
             mods.append({
-                "filename": f,
+                "filename": "",
                 "name": name,
-                "version": info.get("version", ""),
-                "title": info.get("title", name),
-                "author": info.get("author", ""),
-                "description": info.get("description", ""),
-                "factorio_version": info.get("factorio_version", ""),
-                "enabled": enabled,
-                "size": stat.st_size,
-                "modified": datetime.fromtimestamp(stat.st_mtime).isoformat(),
+                "version": "",
+                "title": name,
+                "author": "",
+                "description": "",
+                "factorio_version": "",
+                "enabled": entry.get("enabled", True),
+                "is_builtin": True,
+                "size": 0,
+                "modified": "",
             })
 
         mods.sort(key=lambda x: x["name"].lower())
@@ -163,34 +239,23 @@ class ModService:
         logger.info("Mod 删除成功: %s", safe_name)
         return {"success": True}
 
-    async def toggle_mod(self, filename: str, enabled: bool) -> dict:
+    async def toggle_mod(self, name: str, enabled: bool) -> dict:
         mods_dir = await self._get_mods_dir()
-        safe_name = os.path.basename(filename)
-        filepath = os.path.join(mods_dir, safe_name)
-
-        if not os.path.isfile(filepath):
-            return {"success": False, "error": f"Mod 文件不存在: {safe_name}"}
-
-        info = self._parse_mod_zip(filepath)
-        if not info:
-            return {"success": False, "error": f"无法解析 Mod 信息: {safe_name}"}
-
-        mod_name = info["name"]
         mod_list_data = self._read_mod_list(mods_dir)
         mods = mod_list_data.get("mods", [])
 
-        existing = next((m for m in mods if m["name"] == mod_name), None)
+        existing = next((m for m in mods if m["name"] == name), None)
         if existing:
             existing["enabled"] = enabled
         else:
-            mods.append({"name": mod_name, "enabled": enabled})
+            mods.append({"name": name, "enabled": enabled})
 
         mod_list_data["mods"] = mods
         self._write_mod_list(mods_dir, mod_list_data)
 
         action = "启用" if enabled else "禁用"
-        logger.info("Mod %s 已%s", mod_name, action)
-        return {"success": True, "name": mod_name, "enabled": enabled}
+        logger.info("Mod %s 已%s", name, action)
+        return {"success": True, "name": name, "enabled": enabled}
 
     async def toggle_all_mods(self, enabled: bool) -> dict:
         mods_dir = await self._get_mods_dir()

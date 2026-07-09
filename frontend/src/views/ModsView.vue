@@ -12,6 +12,7 @@ interface ModInfo {
   description: string
   factorio_version: string
   enabled: boolean
+  is_builtin: boolean
   size: number
   modified: string
 }
@@ -84,7 +85,7 @@ async function deleteMod(mod: ModInfo) {
 
 async function toggleMod(mod: ModInfo) {
   try {
-    await api.post('/mods/toggle', { filename: mod.filename, enabled: !mod.enabled })
+    await api.post('/mods/toggle', { name: mod.name, enabled: !mod.enabled })
     mod.enabled = !mod.enabled
   } catch (e: any) {
     alert(e.message || '操作失败')
@@ -190,10 +191,11 @@ onMounted(fetchMods)
               <span class="font-medium text-factorio-text">{{ mod.title || mod.name }}</span>
               <span class="text-xs px-2 py-0.5 rounded bg-factorio-bg text-factorio-text-muted">v{{ mod.version }}</span>
               <span v-if="mod.factorio_version" class="text-xs px-2 py-0.5 rounded bg-factorio-bg text-factorio-text-muted">Factorio {{ mod.factorio_version }}</span>
+              <span v-if="mod.is_builtin" class="text-xs px-2 py-0.5 rounded bg-factorio-accent/15 text-factorio-accent">内置</span>
               <span v-if="mod.author" class="text-xs text-factorio-text-muted">by {{ mod.author }}</span>
             </div>
             <p v-if="mod.description" class="text-sm text-factorio-text-muted mt-1 line-clamp-2">{{ mod.description }}</p>
-            <div class="flex items-center gap-3 mt-1 text-xs text-factorio-text-muted">
+            <div v-if="!mod.is_builtin" class="flex items-center gap-3 mt-1 text-xs text-factorio-text-muted">
               <span>{{ formatSize(mod.size) }}</span>
               <span>{{ new Date(mod.modified).toLocaleString() }}</span>
               <span class="font-mono">{{ mod.filename }}</span>
@@ -211,6 +213,7 @@ onMounted(fetchMods)
               <PowerOff v-else class="w-4 h-4" />
             </button>
             <button
+              v-if="!mod.is_builtin"
               @click="downloadMod(mod)"
               class="p-2 rounded-lg hover:bg-factorio-bg text-factorio-text-muted hover:text-factorio-text transition-colors"
               title="下载"
@@ -218,6 +221,7 @@ onMounted(fetchMods)
               <Download class="w-4 h-4" />
             </button>
             <button
+              v-if="!mod.is_builtin"
               @click="deleteMod(mod)"
               class="p-2 rounded-lg hover:bg-red-500/10 text-factorio-text-muted hover:text-red-400 transition-colors"
               title="删除"
