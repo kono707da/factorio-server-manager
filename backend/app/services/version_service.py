@@ -11,6 +11,7 @@ import zipfile
 import aiohttp
 
 from app.database import get_db
+from app.services.factorio_process import FactorioProcess
 
 logger = logging.getLogger("factorio_manager.version_service")
 
@@ -134,6 +135,14 @@ class VersionService:
         if not factorio_dir:
             return {"success": False, "error": "Factorio 安装目录未配置"}
 
+        proc = FactorioProcess.get_instance()
+        if proc.get_status()["running"]:
+            logger.info("安装前停止 Factorio 服务器...")
+            stop_result = await proc.stop()
+            if not stop_result.get("success"):
+                return {"success": False, "error": f"停止服务器失败: {stop_result.get('error', '未知错误')}"}
+            await asyncio.sleep(2)
+
         system = platform.system().lower()
         if system == "windows":
             plat = "win64"
@@ -178,51 +187,92 @@ class VersionService:
 
                 logger.info("下载完成，开始解压安装...")
 
-                backup_dir = factorio_dir + f"_backup_{version}"
+                backup_dir = os.path.join(tmp_dir, "factorio_backup")
+                preserve_items = ["saves", "config", "server-id.json", "player-data.json", "server-settings.json"]
+
                 if os.path.isdir(factorio_dir):
-                    if os.path.isdir(backup_dir):
-                        shutil.rmtree(backup_dir)
-                    shutil.move(factorio_dir, backup_dir)
+                    os.makedirs(backup_dir, exist_ok=True)
+                    for item in preserve_items:
+                        src = os.path.join(factorio_dir, item)
+                        if os.path.exists(src):
+                            dst = os.path.join(backup_dir, item)
+                            if os.path.isdir(src):
+                                shutil.copytree(src, dst)
+                            else:
+                                shutil.copy2(src, dst)
+                            logger.info("已备份: %s", item)
+
+                    for item in os.listdir(factorio_dir):
+                        item_path = os.path.join(factorio_dir, item)
+                        try:
+                            if os.path.isdir(item_path):
+                                shutil.rmtree(item_path)
+                            else:
+                                os.remove(item_path)
+                        except OSError as e:
+                            logger.warning("清理旧文件失败(跳过): %s - %s", item, e)
+                    logger.info("已清理 %s 目录内容", factorio_dir)
+
+                extract_dir = os.path.join(tmp_dir, "extracted")
+                os.makedirs(extract_dir, exist_ok=True)
 
                 try:
                     if archive_path.endswith(".tar.xz"):
                         import lzma
                         with lzma.open(archive_path, "rb") as f:
                             with tarfile.open(fileobj=f) as tar:
-                                tar.extractall(path=os.path.dirname(factorio_dir))
+                                tar.extractall(path=extract_dir)
                     elif archive_path.endswith(".zip"):
                         with zipfile.ZipFile(archive_path, "r") as zf:
-                            zf.extractall(path=os.path.dirname(factorio_dir))
+                            zf.extractall(path=extract_dir)
                     else:
                         with tarfile.open(archive_path, "r:*") as tar:
-                            tar.extractall(path=os.path.dirname(factorio_dir))
+                            tar.extractall(path=extract_dir)
                 except Exception as extract_err:
                     if os.path.isdir(backup_dir):
-                        shutil.move(backup_dir, factorio_dir)
+                        for item in os.listdir(backup_dir):
+                            src = os.path.join(backup_dir, item)
+                            dst = os.path.join(factorio_dir, item)
+                            if os.path.isdir(src):
+                                shutil.copytree(src, dst)
+                            else:
+                                os.makedirs(os.path.dirname(dst), exist_ok=True)
+                                shutil.copy2(src, dst)
                     raise extract_err
 
+                extracted_factorio = os.path.join(extract_dir, "factorio")
+                if not os.path.isdir(extracted_factorio):
+                    subdirs = [d for d in os.listdir(extract_dir) if os.path.isdir(os.path.join(extract_dir, d))]
+                    if len(subdirs) == 1:
+                        extracted_factorio = os.path.join(extract_dir, subdirs[0])
+                    else:
+                        extracted_factorio = extract_dir
+
+                for item in os.listdir(extracted_factorio):
+                    src = os.path.join(extracted_factorio, item)
+                    dst = os.path.join(factorio_dir, item)
+                    if os.path.isdir(src):
+                        shutil.copytree(src, dst)
+                    else:
+                        shutil.copy2(src, dst)
+                logger.info("已将新版本文件复制到 %s", factorio_dir)
+
                 if os.path.isdir(backup_dir):
-                    saves_src = os.path.join(backup_dir, "saves")
-                    saves_dst = os.path.join(factorio_dir, "saves")
-                    if os.path.isdir(saves_src) and not os.path.isdir(saves_dst):
-                        shutil.copytree(saves_src, saves_dst)
-
-                    config_src = os.path.join(backup_dir, "config")
-                    config_dst = os.path.join(factorio_dir, "config")
-                    if os.path.isdir(config_src) and not os.path.isdir(config_dst):
-                        shutil.copytree(config_src, config_dst)
-
-                    server_id_src = os.path.join(backup_dir, "server-id.json")
-                    server_id_dst = os.path.join(factorio_dir, "server-id.json")
-                    if os.path.isfile(server_id_src) and not os.path.isfile(server_id_dst):
-                        shutil.copy2(server_id_src, server_id_dst)
-
-                    player_data_src = os.path.join(backup_dir, "player-data.json")
-                    player_data_dst = os.path.join(factorio_dir, "player-data.json")
-                    if os.path.isfile(player_data_src) and not os.path.isfile(player_data_dst):
-                        shutil.copy2(player_data_src, player_data_dst)
-
-                    shutil.rmtree(backup_dir, ignore_errors=True)
+                    for item in os.listdir(backup_dir):
+                        src = os.path.join(backup_dir, item)
+                        dst = os.path.join(factorio_dir, item)
+                        if os.path.exists(dst):
+                            if os.path.isdir(dst):
+                                shutil.rmtree(dst)
+                                shutil.copytree(src, dst)
+                            else:
+                                shutil.copy2(src, dst)
+                        else:
+                            if os.path.isdir(src):
+                                shutil.copytree(src, dst)
+                            else:
+                                shutil.copy2(src, dst)
+                    logger.info("已恢复备份数据")
 
                 db = await get_db()
                 await db.execute(
