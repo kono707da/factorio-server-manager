@@ -8,6 +8,7 @@ import {
   Save,
   HardDrive,
   RefreshCw,
+  Package,
   Settings,
   Menu,
   X,
@@ -25,6 +26,7 @@ const navItems = [
   { path: '/saves', label: '存档管理', icon: Save },
   { path: '/backups', label: '定时备份', icon: HardDrive },
   { path: '/versions', label: '版本管理', icon: RefreshCw },
+  { path: '/mods', label: 'Mod 管理', icon: Package },
   { path: '/settings', label: '系统设置', icon: Settings },
 ]
 

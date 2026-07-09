@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.database import init_db, close_db
-from app.routers import server, logs, commands, saves, backups, versions, config
+from app.routers import server, logs, commands, saves, backups, versions, config, mods
 from app.services.backup_service import BackupService
 from app.services.factorio_process import FactorioProcess
 from app.services.log_service import LogService
@@ -83,6 +83,7 @@ app.include_router(saves.router)
 app.include_router(backups.router)
 app.include_router(versions.router)
 app.include_router(config.router)
+app.include_router(mods.router)
 
 
 @app.get("/health")

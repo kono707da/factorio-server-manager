@@ -95,3 +95,8 @@ class VersionInfo(BaseModel):
 class LatestVersionInfo(BaseModel):
     stable: str = ""
     experimental: str = ""
+
+
+class ModToggleRequest(BaseModel):
+    filename: str
+    enabled: bool
