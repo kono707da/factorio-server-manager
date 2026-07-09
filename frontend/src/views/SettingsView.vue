@@ -15,6 +15,8 @@ interface AppConfig {
   require_user_verification: boolean
   autosave_interval: number
   autosave_slots: number
+  factorio_username: string
+  factorio_token: string
 }
 
 const config = ref<AppConfig>({
@@ -29,6 +31,8 @@ const config = ref<AppConfig>({
   require_user_verification: true,
   autosave_interval: 5,
   autosave_slots: 5,
+  factorio_username: '',
+  factorio_token: '',
 })
 const saving = ref(false)
 const saved = ref(false)
@@ -114,6 +118,22 @@ onMounted(fetchConfig)
                 class="rounded bg-factorio-bg border-factorio-border"
               />
               <label for="verify" class="text-sm cursor-pointer">要求玩家验证（需要 Factorio 账号）</label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Factorio Account -->
+        <div>
+          <h4 class="text-sm font-medium text-factorio-text-muted uppercase tracking-wider mb-3">Factorio 账号（公开服务器列表需要）</h4>
+          <p class="text-xs text-factorio-text-muted mb-3">填写 Factorio 官网用户名和 Token 后，服务器将显示在公开服务器列表中。不填写则仅局域网可见。</p>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="text-sm text-factorio-text-muted block mb-1">Factorio 用户名</label>
+              <input v-model="config.factorio_username" class="input w-full" placeholder="Factorio 官网用户名" />
+            </div>
+            <div>
+              <label class="text-sm text-factorio-text-muted block mb-1">Factorio Token</label>
+              <input v-model="config.factorio_token" type="password" class="input w-full" placeholder="在 factorio.com 个人资料页获取" />
             </div>
           </div>
         </div>

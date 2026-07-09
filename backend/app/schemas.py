@@ -57,6 +57,8 @@ class SettingsUpdate(BaseModel):
     require_user_verification: bool | None = None
     autosave_interval: int | None = None
     autosave_slots: int | None = None
+    factorio_username: str | None = None
+    factorio_token: str | None = None
 
 
 class SaveInfo(BaseModel):

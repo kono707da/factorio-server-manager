@@ -30,7 +30,9 @@ async def init_db():
             max_players INTEGER NOT NULL DEFAULT 10,
             require_user_verification INTEGER NOT NULL DEFAULT 1,
             autosave_interval INTEGER NOT NULL DEFAULT 5,
-            autosave_slots INTEGER NOT NULL DEFAULT 5
+            autosave_slots INTEGER NOT NULL DEFAULT 5,
+            factorio_username TEXT DEFAULT '',
+            factorio_token TEXT DEFAULT ''
         );
 
         CREATE TABLE IF NOT EXISTS backup_config (
@@ -77,6 +79,16 @@ async def init_db():
         "UPDATE settings SET logs_dir = ? WHERE logs_dir = '' OR logs_dir IS NULL",
         [DEFAULT_LOGS_DIR],
     )
+
+    try:
+        await db.execute("ALTER TABLE settings ADD COLUMN factorio_username TEXT DEFAULT ''")
+    except Exception:
+        pass
+    try:
+        await db.execute("ALTER TABLE settings ADD COLUMN factorio_token TEXT DEFAULT ''")
+    except Exception:
+        pass
+
     await db.commit()
 
 

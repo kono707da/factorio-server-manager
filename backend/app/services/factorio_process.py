@@ -80,15 +80,18 @@ class FactorioProcess:
         return None
 
     def _generate_server_settings(self, path: str, paths: dict):
+        token = str(paths.get("factorio_token", "") or "")
+        username = str(paths.get("factorio_username", "") or "")
+        has_credentials = bool(token and username)
         default_settings = {
             "name": "Factorio Server",
             "description": "Factorio server managed by Factorio Server Manager",
             "tags": ["game", "server"],
             "max_players": int(paths.get("max_players", 10)),
-            "visibility": {"public": True, "lan": True},
-            "username": "",
+            "visibility": {"public": has_credentials, "lan": True},
+            "username": username,
             "password": "",
-            "token": "",
+            "token": token,
             "game_password": str(paths.get("game_password", "")),
             "require_user_verification": bool(paths.get("require_user_verification", True)),
             "max_upload_in_kilobytes_per_second": 0,
@@ -158,7 +161,7 @@ class FactorioProcess:
             save_path = os.path.join(saves_dir, save_filename)
             if not os.path.isfile(save_path):
                 return {"success": False, "error": f"存档文件不存在: {save_filename}"}
-            cmd.append(save_filename)
+            cmd.append(save_path)
             self.current_save = save_filename
         else:
             saves = [f for f in os.listdir(saves_dir) if f.endswith(".zip")]
@@ -167,9 +170,8 @@ class FactorioProcess:
                     [os.path.join(saves_dir, s) for s in saves],
                     key=os.path.getmtime,
                 )
-                save_name = os.path.basename(latest)
-                cmd.append(save_name)
-                self.current_save = save_name
+                cmd.append(latest)
+                self.current_save = os.path.basename(latest)
             else:
                 cmd.append("--create")
                 cmd.append(os.path.join(saves_dir, "new_save.zip"))
