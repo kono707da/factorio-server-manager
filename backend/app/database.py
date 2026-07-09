@@ -1,6 +1,6 @@
 import aiosqlite
 import os
-from app.config import DATABASE_PATH, DATA_DIR
+from app.config import DATABASE_PATH, DATA_DIR, DEFAULT_FACTORIO_DIR, DEFAULT_SAVES_DIR, DEFAULT_BACKUPS_DIR, DEFAULT_LOGS_DIR
 
 _db: aiosqlite.Connection | None = None
 
@@ -21,10 +21,10 @@ async def init_db():
     await db.executescript("""
         CREATE TABLE IF NOT EXISTS settings (
             id INTEGER PRIMARY KEY DEFAULT 1,
-            factorio_dir TEXT NOT NULL DEFAULT '',
-            saves_dir TEXT NOT NULL DEFAULT '',
-            backups_dir TEXT NOT NULL DEFAULT '',
-            logs_dir TEXT NOT NULL DEFAULT '',
+            factorio_dir TEXT NOT NULL DEFAULT '/opt/factorio',
+            saves_dir TEXT NOT NULL DEFAULT '/opt/factorio/saves',
+            backups_dir TEXT NOT NULL DEFAULT '/opt/factorio/backups',
+            logs_dir TEXT NOT NULL DEFAULT '/opt/factorio/logs',
             server_port INTEGER NOT NULL DEFAULT 34197,
             game_password TEXT DEFAULT '',
             max_players INTEGER NOT NULL DEFAULT 10,
@@ -60,6 +60,23 @@ async def init_db():
         INSERT OR IGNORE INTO backup_config (id) VALUES (1);
         INSERT OR IGNORE INTO version_info (id) VALUES (1);
     """)
+
+    await db.execute(
+        "UPDATE settings SET factorio_dir = ? WHERE factorio_dir = '' OR factorio_dir IS NULL",
+        [DEFAULT_FACTORIO_DIR],
+    )
+    await db.execute(
+        "UPDATE settings SET saves_dir = ? WHERE saves_dir = '' OR saves_dir IS NULL",
+        [DEFAULT_SAVES_DIR],
+    )
+    await db.execute(
+        "UPDATE settings SET backups_dir = ? WHERE backups_dir = '' OR backups_dir IS NULL",
+        [DEFAULT_BACKUPS_DIR],
+    )
+    await db.execute(
+        "UPDATE settings SET logs_dir = ? WHERE logs_dir = '' OR logs_dir IS NULL",
+        [DEFAULT_LOGS_DIR],
+    )
     await db.commit()
 
 

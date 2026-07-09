@@ -73,19 +73,19 @@ onMounted(fetchConfig)
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label class="text-sm text-factorio-text-muted block mb-1">Factorio 安装目录</label>
-              <input v-model="config.factorio_dir" class="input w-full" placeholder="例: C:\Program Files (x86)\Steam\steamapps\common\Factorio" />
+              <input v-model="config.factorio_dir" class="input w-full" placeholder="/opt/factorio" />
             </div>
             <div>
-              <label class="text-sm text-factorio-text-muted block mb-1">存档目录（留空则使用默认）</label>
-              <input v-model="config.saves_dir" class="input w-full" placeholder="留空使用 Factorio 目录下的 saves" />
+              <label class="text-sm text-factorio-text-muted block mb-1">存档目录</label>
+              <input v-model="config.saves_dir" class="input w-full" placeholder="/opt/factorio/saves" />
             </div>
             <div>
-              <label class="text-sm text-factorio-text-muted block mb-1">备份目录（留空则使用默认）</label>
-              <input v-model="config.backups_dir" class="input w-full" placeholder="留空使用 Factorio 目录下的 backups" />
+              <label class="text-sm text-factorio-text-muted block mb-1">备份目录</label>
+              <input v-model="config.backups_dir" class="input w-full" placeholder="/opt/factorio/backups" />
             </div>
             <div>
-              <label class="text-sm text-factorio-text-muted block mb-1">日志目录（留空则使用默认）</label>
-              <input v-model="config.logs_dir" class="input w-full" placeholder="留空使用 Factorio 目录下的 logs" />
+              <label class="text-sm text-factorio-text-muted block mb-1">日志目录</label>
+              <input v-model="config.logs_dir" class="input w-full" placeholder="/opt/factorio/logs" />
             </div>
           </div>
         </div>

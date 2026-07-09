@@ -5,12 +5,10 @@ DATA_DIR = os.environ.get("DATA_DIR", os.path.join(BASE_DIR, "data"))
 DATABASE_PATH = os.path.join(DATA_DIR, "factorio_manager.db")
 DATABASE_URL = f"sqlite+aiosqlite:///{DATABASE_PATH}"
 
-DEFAULT_FACTORIO_DIR = os.environ.get(
-    "FACTORIO_DIR", "/opt/factorio"
-)
-DEFAULT_SAVES_DIR = os.environ.get("SAVES_DIR", "")
-DEFAULT_BACKUPS_DIR = os.environ.get("BACKUPS_DIR", "")
-DEFAULT_LOGS_DIR = os.environ.get("LOGS_DIR", "")
+DEFAULT_FACTORIO_DIR = os.environ.get("FACTORIO_DIR", "/opt/factorio")
+DEFAULT_SAVES_DIR = os.environ.get("SAVES_DIR", "/opt/factorio/saves")
+DEFAULT_BACKUPS_DIR = os.environ.get("BACKUPS_DIR", "/opt/factorio/backups")
+DEFAULT_LOGS_DIR = os.environ.get("LOGS_DIR", "/opt/factorio/logs")
 DEFAULT_SERVER_PORT = 34197
 DEFAULT_WEB_PORT = 8199
 
