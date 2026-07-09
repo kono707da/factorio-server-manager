@@ -7,6 +7,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 
 from app.database import get_db
+from app.config import DEFAULT_SAVES_DIR, DEFAULT_BACKUPS_DIR, DEFAULT_FACTORIO_DIR
 
 logger = logging.getLogger("factorio_manager.backup_service")
 
@@ -31,12 +32,15 @@ class BackupService:
         )
         row = await cursor.fetchone()
         if not row:
-            return "", ""
+            return DEFAULT_SAVES_DIR, DEFAULT_BACKUPS_DIR
         row_dict = dict(row)
-        saves_dir = row_dict["saves_dir"] or os.path.join(row_dict["factorio_dir"], "saves")
-        backups_dir = row_dict["backups_dir"] or os.path.join(
-            row_dict["factorio_dir"], "backups"
-        )
+        factorio_dir = row_dict["factorio_dir"] or DEFAULT_FACTORIO_DIR
+        saves_dir = row_dict["saves_dir"] or os.path.join(factorio_dir, "saves")
+        backups_dir = row_dict["backups_dir"] or os.path.join(factorio_dir, "backups")
+        if not os.path.isabs(saves_dir):
+            saves_dir = os.path.join(factorio_dir, saves_dir)
+        if not os.path.isabs(backups_dir):
+            backups_dir = os.path.join(factorio_dir, backups_dir)
         return saves_dir, backups_dir
 
     async def get_config(self) -> dict:

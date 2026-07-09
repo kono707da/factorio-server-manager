@@ -4,6 +4,7 @@ import shutil
 from datetime import datetime
 
 from app.database import get_db
+from app.config import DEFAULT_SAVES_DIR, DEFAULT_FACTORIO_DIR
 
 logger = logging.getLogger("factorio_manager.save_service")
 
@@ -25,11 +26,14 @@ class SaveService:
         cursor = await db.execute("SELECT saves_dir, factorio_dir FROM settings WHERE id = 1")
         row = await cursor.fetchone()
         if not row:
-            return ""
+            return DEFAULT_SAVES_DIR
         row_dict = dict(row)
         saves_dir = row_dict["saves_dir"]
         if not saves_dir:
-            saves_dir = os.path.join(row_dict["factorio_dir"], "saves")
+            factorio_dir = row_dict["factorio_dir"] or DEFAULT_FACTORIO_DIR
+            saves_dir = os.path.join(factorio_dir, "saves")
+        if not os.path.isabs(saves_dir):
+            saves_dir = os.path.join(DEFAULT_FACTORIO_DIR, saves_dir)
         return saves_dir
 
     async def list_saves(self, active_save: str = "") -> list[dict]:

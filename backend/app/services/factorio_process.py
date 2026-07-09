@@ -6,6 +6,7 @@ import time
 from typing import Callable
 
 from app.database import get_db
+from app.config import DEFAULT_FACTORIO_DIR, DEFAULT_SAVES_DIR, DEFAULT_BACKUPS_DIR, DEFAULT_LOGS_DIR
 
 logger = logging.getLogger("factorio_manager.process")
 
@@ -42,17 +43,17 @@ class FactorioProcess:
         return dict(row) if row else {}
 
     def _resolve_paths(self, settings: dict) -> dict:
-        factorio_dir = settings.get("factorio_dir", "")
-        saves_dir = settings.get("saves_dir", "")
-        backups_dir = settings.get("backups_dir", "")
-        logs_dir = settings.get("logs_dir", "")
+        factorio_dir = settings.get("factorio_dir") or DEFAULT_FACTORIO_DIR
+        saves_dir = settings.get("saves_dir") or DEFAULT_SAVES_DIR
+        backups_dir = settings.get("backups_dir") or DEFAULT_BACKUPS_DIR
+        logs_dir = settings.get("logs_dir") or DEFAULT_LOGS_DIR
 
-        if not saves_dir and factorio_dir:
-            saves_dir = os.path.join(factorio_dir, "saves")
-        if not backups_dir and factorio_dir:
-            backups_dir = os.path.join(factorio_dir, "backups")
-        if not logs_dir and factorio_dir:
-            logs_dir = os.path.join(factorio_dir, "logs")
+        if not os.path.isabs(saves_dir):
+            saves_dir = os.path.join(factorio_dir, saves_dir)
+        if not os.path.isabs(backups_dir):
+            backups_dir = os.path.join(factorio_dir, backups_dir)
+        if not os.path.isabs(logs_dir):
+            logs_dir = os.path.join(factorio_dir, logs_dir)
 
         return {
             "factorio_dir": factorio_dir,

@@ -13,6 +13,7 @@ from app.routers import server, logs, commands, saves, backups, versions, config
 from app.services.backup_service import BackupService
 from app.services.factorio_process import FactorioProcess
 from app.services.log_service import LogService
+from app.config import DEFAULT_FACTORIO_DIR, DEFAULT_SAVES_DIR, DEFAULT_BACKUPS_DIR, DEFAULT_LOGS_DIR
 
 logging.basicConfig(
     level=logging.INFO,
@@ -30,6 +31,10 @@ FRONTEND_DIST = os.environ.get(
 async def lifespan(app: FastAPI):
     await init_db()
     logger.info("数据库初始化完成")
+
+    for d in [DEFAULT_FACTORIO_DIR, DEFAULT_SAVES_DIR, DEFAULT_BACKUPS_DIR, DEFAULT_LOGS_DIR]:
+        os.makedirs(d, exist_ok=True)
+    logger.info("目录初始化完成: %s, %s, %s, %s", DEFAULT_FACTORIO_DIR, DEFAULT_SAVES_DIR, DEFAULT_BACKUPS_DIR, DEFAULT_LOGS_DIR)
 
     log_svc = LogService.get_instance()
     proc = FactorioProcess.get_instance()

@@ -12,6 +12,7 @@ import aiohttp
 
 from app.database import get_db
 from app.services.factorio_process import FactorioProcess
+from app.config import DEFAULT_FACTORIO_DIR
 
 logger = logging.getLogger("factorio_manager.version_service")
 
@@ -37,7 +38,10 @@ class VersionService:
         db = await get_db()
         cursor = await db.execute("SELECT factorio_dir FROM settings WHERE id = 1")
         row = await cursor.fetchone()
-        return dict(row)["factorio_dir"] if row else ""
+        if not row:
+            return DEFAULT_FACTORIO_DIR
+        factorio_dir = dict(row)["factorio_dir"]
+        return factorio_dir if factorio_dir else DEFAULT_FACTORIO_DIR
 
     def _detect_current_version(self, factorio_dir: str) -> str:
         info_path = ""
