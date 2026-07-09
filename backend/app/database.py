@@ -32,7 +32,8 @@ async def init_db():
             autosave_interval INTEGER NOT NULL DEFAULT 5,
             autosave_slots INTEGER NOT NULL DEFAULT 5,
             factorio_username TEXT DEFAULT '',
-            factorio_token TEXT DEFAULT ''
+            factorio_token TEXT DEFAULT '',
+            auto_pause INTEGER NOT NULL DEFAULT 1
         );
 
         CREATE TABLE IF NOT EXISTS backup_config (
@@ -86,6 +87,10 @@ async def init_db():
         pass
     try:
         await db.execute("ALTER TABLE settings ADD COLUMN factorio_token TEXT DEFAULT ''")
+    except Exception:
+        pass
+    try:
+        await db.execute("ALTER TABLE settings ADD COLUMN auto_pause INTEGER NOT NULL DEFAULT 1")
     except Exception:
         pass
 

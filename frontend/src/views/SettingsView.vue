@@ -17,6 +17,7 @@ interface AppConfig {
   autosave_slots: number
   factorio_username: string
   factorio_token: string
+  auto_pause: boolean
 }
 
 const config = ref<AppConfig>({
@@ -33,6 +34,7 @@ const config = ref<AppConfig>({
   autosave_slots: 5,
   factorio_username: '',
   factorio_token: '',
+  auto_pause: true,
 })
 const saving = ref(false)
 const saved = ref(false)
@@ -118,6 +120,30 @@ onMounted(fetchConfig)
                 class="rounded bg-factorio-bg border-factorio-border"
               />
               <label for="verify" class="text-sm cursor-pointer">要求玩家验证（需要 Factorio 账号）</label>
+            </div>
+            <div class="flex items-center justify-between pt-5">
+              <div>
+                <label for="autoPause" class="text-sm cursor-pointer block">无人时自动暂停游戏</label>
+                <p class="text-xs text-factorio-text-muted mt-1">开启后，当没有玩家在线时游戏内时间停止推进；关闭后即使无人游戏也会继续运行</p>
+              </div>
+              <button
+                type="button"
+                id="autoPause"
+                role="switch"
+                :aria-checked="config.auto_pause"
+                @click="config.auto_pause = !config.auto_pause"
+                :class="[
+                  'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-factorio-accent focus:ring-offset-2',
+                  config.auto_pause ? 'bg-factorio-accent' : 'bg-factorio-border'
+                ]"
+              >
+                <span
+                  :class="[
+                    'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
+                    config.auto_pause ? 'translate-x-5' : 'translate-x-0'
+                  ]"
+                />
+              </button>
             </div>
           </div>
         </div>

@@ -25,6 +25,7 @@ async def get_config():
         if not row_dict.get(field):
             row_dict[field] = default
     row_dict["require_user_verification"] = bool(row_dict["require_user_verification"])
+    row_dict["auto_pause"] = bool(row_dict.get("auto_pause", 1))
     return row_dict
 
 
@@ -56,6 +57,10 @@ async def update_config(req: SettingsUpdate):
         updates.append("require_user_verification = ?")
         params.append(1 if req.require_user_verification else 0)
 
+    if req.auto_pause is not None:
+        updates.append("auto_pause = ?")
+        params.append(1 if req.auto_pause else 0)
+
     if updates:
         await db.execute(
             f"UPDATE settings SET {', '.join(updates)} WHERE id = 1", params
@@ -66,4 +71,5 @@ async def update_config(req: SettingsUpdate):
     row = await cursor.fetchone()
     row_dict = dict(row) if row else {}
     row_dict["require_user_verification"] = bool(row_dict.get("require_user_verification", True))
+    row_dict["auto_pause"] = bool(row_dict.get("auto_pause", 1))
     return row_dict

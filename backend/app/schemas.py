@@ -59,6 +59,7 @@ class SettingsUpdate(BaseModel):
     autosave_slots: int | None = None
     factorio_username: str | None = None
     factorio_token: str | None = None
+    auto_pause: bool | None = None
 
 
 class SaveInfo(BaseModel):

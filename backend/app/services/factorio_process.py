@@ -67,6 +67,7 @@ class FactorioProcess:
             "require_user_verification": settings.get("require_user_verification", True),
             "autosave_interval": settings.get("autosave_interval", 5),
             "autosave_slots": settings.get("autosave_slots", 5),
+            "auto_pause": settings.get("auto_pause", 1),
         }
 
     def _find_binary(self, factorio_dir: str) -> str | None:
@@ -102,7 +103,7 @@ class FactorioProcess:
             "autosave_interval": int(paths.get("autosave_interval", 5)),
             "autosave_slots": int(paths.get("autosave_slots", 5)),
             "afk_autokick_interval": 0,
-            "auto_pause": True,
+            "auto_pause": bool(paths.get("auto_pause", True)),
             "only_admins_can_pause_the_game": True,
             "autosave_only_on_server": True,
             "non_blocking_saving": True,
