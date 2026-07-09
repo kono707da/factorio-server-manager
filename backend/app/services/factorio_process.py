@@ -143,8 +143,7 @@ class FactorioProcess:
         os.makedirs(saves_dir, exist_ok=True)
 
         server_settings_path = os.path.join(factorio_dir, "server-settings.json")
-        if not os.path.isfile(server_settings_path):
-            self._generate_server_settings(server_settings_path, paths)
+        self._generate_server_settings(server_settings_path, paths)
 
         server_id_path = os.path.join(factorio_dir, "server-id.json")
         if not os.path.isfile(server_id_path):
