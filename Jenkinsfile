@@ -2,11 +2,10 @@ pipeline {
     agent any
 
     environment {
-        REGISTRY      = '192.168.188.18:5000'
         IMAGE_NAME    = 'factorio-manager'
+        REGISTRY      = credentials('docker-registry-url')
         IMAGE_TAG     = "${REGISTRY}/${IMAGE_NAME}:${BUILD_NUMBER}"
         IMAGE_LATEST  = "${REGISTRY}/${IMAGE_NAME}:latest"
-        DEPLOY_HOST   = '38.92.9.207'
         WEB_PORT      = '8199'
         GAME_PORT     = '34197'
         DATA_VOLUME   = 'factorio-manager-data'
