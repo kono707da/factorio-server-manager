@@ -2,7 +2,6 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_BUILDKIT = '0'
         IMAGE_NAME    = 'factorio-manager'
         REGISTRY      = credentials('docker-registry-url')
         IMAGE_TAG     = "${REGISTRY}/${IMAGE_NAME}:${BUILD_NUMBER}"
@@ -23,7 +22,7 @@ pipeline {
 
         stage('Build Image') {
             steps {
-                sh "docker build -t ${IMAGE_NAME} -t ${IMAGE_TAG} -t ${IMAGE_LATEST} ."
+                sh "DOCKER_BUILDKIT=0 docker build -t ${IMAGE_NAME} -t ${IMAGE_TAG} -t ${IMAGE_LATEST} ."
             }
         }
 
