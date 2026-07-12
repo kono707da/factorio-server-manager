@@ -2,6 +2,7 @@ pipeline {
     agent any
 
     environment {
+        DOCKER_BUILDKIT = '0'
         IMAGE_NAME    = 'factorio-manager'
         REGISTRY      = credentials('docker-registry-url')
         IMAGE_TAG     = "${REGISTRY}/${IMAGE_NAME}:${BUILD_NUMBER}"
